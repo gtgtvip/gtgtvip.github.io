@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>2D-3D-GIS</title>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        #infoDiv {
+            position: absolute;
+            top: 15px;
+            left: 60px;
+        }
+
+        #infoDiv input {
+            border: none;
+            box-shadow: rgba(0, 0, 0, 0.3) 0px 1px 2px;
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.12/"></script>
+
+    <script>
+        require([
+            "esri/views/MapView",
+            "esri/views/SceneView",
+            "esri/WebMap",
+            "esri/WebScene"
+        ], function (MapView, SceneView, WebMap, WebScene) {
+            var switchButton = document.getElementById("switch-btn");
+
+            var appConfig = {
+                mapView: null,
+                sceneView: null,
+                activeView: null,
+                container: "viewDiv" // use same container for views
+            };
+
+            var initialViewParams = {
+                zoom: 12,
+                center: [106.43759993450347, 26.772798684981126],
+                container: appConfig.container,
+                scale: 42000000,
+                // camera: {
+                //     heading: 90, // face due east
+                //     tilt: 45, // looking from a bird's eye view
+                //     position: {
+                //         latitude: 38,
+                //         longitude: -122,
+                //         z: 20000,
+                //         spatialReference: {
+                //             wkid: 3857
+                //         }
+                //     }
+                // },
+            };
+            var webmap = new WebMap({
+                portalItem: {
+                    // autocasts as new PortalItem()
+                    id: "7ee3c8a93f254753a83ac0195757f137"
+                }
+            });
+            var scene = new WebScene({
+                portalItem: {
+                    // autocasts as new PortalItem()
+                    id: "c8cf26d7acab4e45afcd5e20080983c1"
+                }
+            });
+            //  创建2D视图并设置活动
+            appConfig.mapView = createView(initialViewParams, "2d");
+            appConfig.mapView.map = webmap;
+            appConfig.activeView = appConfig.mapView;
+
+            // 创建3D视图，在设置容器之前不会初始化
+            initialViewParams.container = null;
+            initialViewParams.map = scene;
+            appConfig.sceneView = createView(initialViewParams, "3d");
+
+            // 点击按钮，在2D和3D之间切换视图
+            switchButton.addEventListener("click", function () {
+                switchView();
+            });
+
+            // 将试图从2D切换到3D， 反之亦然
+            function switchView() {
+                var is3D = appConfig.activeView.type === "3d";
+                var activeViewpoint = appConfig.activeView.viewpoint.clone();
+
+                // 删除对上一个视图容器的引用
+                appConfig.activeView.container = null;
+
+                if (is3D) {
+                    // 如果输入视图是SceneView，请在视图上设视点
+                    // mapView实例，在mapView和flag上设置容器
+                    // 它作为视图容器
+                    appConfig.mapView.viewpoint = activeViewpoint;
+                    appConfig.mapView.container = appConfig.container;
+                    appConfig.activeView = appConfig.mapView;
+                    switchButton.value = "3D";
+                } else {
+                    appConfig.sceneView.viewpoint = activeViewpoint;
+                    appConfig.sceneView.container = appConfig.container;
+                    appConfig.activeView = appConfig.sceneView;
+                    switchButton.value = "2D";
+                }
+            }
+
+            // 用于创建2D和3D视图的遍历功能
+            function createView(params, type) {
+                var view;
+                var is2D = type === "2d";
+                if (is2D) {
+                    view = new MapView(params);
+                    return view;
+                } else {
+                    view = new SceneView(params);
+                }
+                return view;
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div id="viewDiv"></div>
+    <div id="infoDiv">
+        <input class="esri-component esri-widget--button esri-widget esri-interactive" type="button" id="switch-btn"
+            value="3D" />
+    </div>
+</body>
+
+</html>
